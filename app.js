@@ -31,7 +31,11 @@
     db.from('stories').select('id,one_liner,reason,year,name,anonymous,x_handle,linkedin,image_url,created_at')
       .eq('status', 'approved').order('created_at', { ascending: false })
       .then(function (r) {
-        if (r.error) { $('#cards').innerHTML = '<div class="empty">Couldn\'t load the wall. Try refreshing.</div>'; return; }
+        if (r.error) {
+          console.error('Loading wall failed', r.error);
+          $('#cards').innerHTML = '<div class="empty">Couldn\'t load the wall. Try refreshing.</div>';
+          return;
+        }
         render(r.data || []);
       });
   }
@@ -61,17 +65,33 @@
     var one = $('#f-one').value.trim(), why = $('#f-why').value.trim();
     if (!one || !why) { st.textContent = 'Tell us what you failed at, and what happened. Everything else is optional.'; return; }
     var btn = this; btn.disabled = true; st.textContent = 'Sending…';
+    var step = 'start';
     try {
       var image_url = null;
       var file = $('#f-img').files[0];
       if (file) {
-        var blob = await compress(file);
-        if (blob.size > 2 * 1024 * 1024) throw new Error('Image is too big even after squeezing it. Try a smaller one.');
+        step = 'compress image';
+        var blob;
+        try {
+          blob = await compress(file);
+        } catch (imgErr) {
+          console.error('Image could not be read', imgErr);
+          st.textContent = 'We couldn\'t read that image. Try a JPG or PNG.';
+          btn.disabled = false;
+          return;
+        }
+        if (blob.size > 2 * 1024 * 1024) {
+          st.textContent = 'That image is too big. Try a smaller one.';
+          btn.disabled = false;
+          return;
+        }
+        step = 'upload image';
         var path = Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 8) + '.jpg';
         var up = await db.storage.from('screenshots').upload(path, blob, { contentType: 'image/jpeg' });
         if (up.error) throw up.error;
         image_url = db.storage.from('screenshots').getPublicUrl(path).data.publicUrl;
       }
+      step = 'save story';
       var anon = $('#f-anon').checked;
       var ins = await db.from('stories').insert({
         one_liner: one, reason: why,
@@ -87,14 +107,17 @@
       $('#formwrap').style.display = 'none'; $('#sent').classList.add('show');
       st.textContent = '';
     } catch (e) {
-      st.textContent = 'Hmm, that didn\'t work either. ' + (e.message || 'Try again in a bit.');
+      console.error('Submit failed at step: ' + step, e);
+      st.textContent = 'Sorry, something went wrong. Please try again in a moment.';
     }
     btn.disabled = false;
   };
+
   $('#again').onclick = function () {
     $('#formwrap').style.display = ''; $('#sent').classList.remove('show');
     ['#f-one', '#f-why', '#f-year', '#f-name', '#f-x', '#f-li', '#f-img'].forEach(function (i) { $(i).value = ''; });
     $('#f-anon').checked = false; $('#f-name').disabled = false; $('#cc').textContent = '0';
+    $('#fstatus').textContent = '';
   };
 
   /* ---------- tip ---------- */
