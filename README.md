@@ -9,7 +9,7 @@ Post what you built, why it died, and your handle. It's cheaper than therapy.
 
 ## Why
 
-Bengaluru has a directory for everyone who is *building* something. Nobody keeps the list of what didn't work — even though that's where most of the lessons are. This is that list. Founders submit a one-liner, a short honest reason, and (optionally) their X/LinkedIn so the post doubles as a small bit of visibility for them.
+Bengaluru has a directory for everyone who is *building* something. Nobody keeps the list of what didn't work/failed — even though that's where most of the lessons are. This is that list. Founders submit a one-liner, a short honest reason, and (optionally) their X/LinkedIn so the post doubles as a small bit of visibility for them.
 
 ## How it works
 
